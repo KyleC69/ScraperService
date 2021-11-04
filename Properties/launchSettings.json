@@ -1,0 +1,24 @@
+﻿{
+  "profiles": {
+    "ScraperService": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "DOTNET_ROOT": "$HOME/dotnet",
+        "DOTNET_ROLL_FORWARD_TO_PRERELEASE": 1
+        
+      }
+      
+
+    }
+    
+  },
+  "$schema": "http://json.schemastore.org/global",
+  "sdk": {
+    "allowPrerelease": true,
+    "rollForward": "latestPatch"
+  }
+
+
+}

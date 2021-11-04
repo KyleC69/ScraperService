@@ -1,0 +1,74 @@
+using System;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using QueService;
+
+namespace App.QueueService
+{
+    public class DefaultBackgroundTaskQue : IBackgroundChannelQue<Task>
+    {
+        private readonly Channel<Func<CancellationToken, Task>> _queChannel;
+        private readonly SemaphoreSlim _taskLock;
+        public DefaultBackgroundTaskQue(int queCapacity, int concurrentLimit)
+        {
+            BoundedChannelOptions options = new(queCapacity);
+            options.FullMode = BoundedChannelFullMode.Wait;
+            options.SingleReader = true;
+            options.SingleWriter = true;
+            _queChannel = Channel.CreateBounded<Func<CancellationToken, Task>>(options);
+            _taskLock = new(concurrentLimit, concurrentLimit);
+        }
+
+        public int TasksWaiting
+        {
+            get
+            {
+                return _queChannel.Reader.Count;
+            }
+        }
+
+        public int TasksRunning => throw new NotImplementedException();
+
+        int IBackgroundChannelQue<Task>.RunningTaskLimit { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
+
+        public async ValueTask<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken)
+        {
+
+            await _taskLock.WaitAsync(cancellationToken);
+            await _queChannel.Reader.WaitToReadAsync(cancellationToken);
+            Func<CancellationToken, Task> workItem = await _queChannel.Reader.ReadAsync(cancellationToken);
+            return workItem;
+        }
+
+
+        public void PauseTaskQue()
+        {
+        }
+
+
+        public async ValueTask QueueBackgroundTaskAsync(Func<CancellationToken, Task> workItem)
+        {
+            if (workItem == null)
+            {
+                throw new ArgumentNullException(nameof(workItem));
+            }
+
+            await _queChannel.Writer.WriteAsync(workItem);
+        }
+
+
+
+        
+
+        public override string? ToString()
+        {
+            return base.ToString();
+        }
+
+        void IBackgroundChannelQue<Task>.TaskLockRelease()
+        {
+            this._taskLock.Release();
+        }
+    }
+}

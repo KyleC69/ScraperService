@@ -1,0 +1,20 @@
+
+
+using Microsoft.Extensions.Primitives;
+
+namespace QueService
+{
+
+    public interface IBackgroundChannelQue<T>
+    {
+        ValueTask QueueBackgroundTaskAsync(Func<CancellationToken, T> workItem);
+
+        ValueTask<Func<CancellationToken, T>> DequeueAsync(CancellationToken cancellationToken);
+
+        void TaskLockRelease();
+        int TasksWaiting { get; }
+        int TasksRunning { get; }
+        int RunningTaskLimit { get; init; }
+
+    }
+}
