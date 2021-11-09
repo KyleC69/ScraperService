@@ -12,36 +12,69 @@ namespace ScraperService
 
 
 
-      public class PageScraper : BrowserControl, IDisposable
+      public interface IPageScraper
       {
 
-            private bool disposedValue1;
-            private readonly ILogger _logger;
+            Task BeginSiteScrapeAsync(CancellationToken stoppingToken);
+      }
 
-            // private readonly PageScraper _instance;
 
-            //
-            //
+
+
+
+
+      public class PageScraper : BrowserControl, IPageScraper, IDisposable
+      {
+
+            private EdgeDriver? _edgeDriver;
+            private DataController? _dataController;
+            private bool disposedValue;
+
             //#######################
 
-            public EdgeDriver TheDriver { get; set; }
-            private IDataController _dataController;
 
-            public PageScraper(ILogger logger, IDataController dataController)
+
+            public PageScraper(ILogger logger)
             {
-                  _logger = logger;
-                  _dataController = dataController;
-                  this.TheDriver ??= InitializeWebDriver().Result;
-
+                  base.Logger = logger;
             }
 
 
+            public static Task BeginScan(ILogger logger, CancellationToken stoppingToken)
+            {
+                  TaskCompletionSource tcs = new();
+
+                  _ = Task.Run(async () =>
+                    {
+
+                                PageScraper ps = new(logger);
+                          try
+                          {
+                                await ps.BeginSiteScrapeAsync(stoppingToken);
+                                tcs.SetResult();
+
+                          }
+                          catch (System.Exception ex)
+                          {
+                                logger.PageScraperUnknownFault(ex);
+                                tcs.SetException(ex);
+                          }
+                          finally
+                          {
+                                ps.Dispose();
+                          }
+                    }, stoppingToken);
 
 
+
+
+                  return tcs.Task;
+            }
             public async Task BeginSiteScrapeAsync(CancellationToken stoppingToken)
             {
 
                   List<TumBlog>? list = _dataController.GetBlogList(5, 5);
+                  
                   if (list.Count == 0)
                   {
                         Worker.TurnTimerOff();
@@ -51,14 +84,17 @@ namespace ScraperService
                         foreach (TumBlog blob in list)
                         {
                               await LoadBlogForScraping(blob, stoppingToken);
-
                         }
                         Console.WriteLine("Batch is complete....");
                   }
-                  catch (TaskCanceledException ex)
+                  catch (TaskCanceledException)
                   {
-                        _logger
-                        }
+                        this.Logger.TaskCanceledException();
+                  }
+                  catch (Exception ex)
+                  {
+                        this.Logger.PageScraperUnknownFault(ex);
+                  }
                   finally
                   {
                         this.TheDriver.Quit();
@@ -67,7 +103,7 @@ namespace ScraperService
 
             internal async Task LoadBlogForScraping(TumBlog blog, CancellationToken stoppingToken)
             {
-                        HtmlDocument document = new();
+                  HtmlDocument document = new();
                   try
                   {
                         // WebDriverWait wait = new WebDriverWait(this.TheDriver, TimeSpan.FromSeconds(30)).Until(ExpectedConditions.ElementToBeClickable(By.XPath("//a")));
@@ -85,8 +121,9 @@ namespace ScraperService
                   }
                   catch (OpenQA.Selenium.WebDriverException wde)
                   {
-                        _logger.PageScraperNavigationFault(wde);
+                        Logger.PageScraperNavigationFault(wde);
                   }
+
                   if (!stoppingToken.IsCancellationRequested)
                   {
                         try
@@ -110,20 +147,11 @@ namespace ScraperService
                         }
                         catch (HtmlAgilityPack.NodeNotFoundException)
                         {
-                              using IDisposable? scope = _logger.ProcessingWorkScope(DateTime.Now);
-                              _logger.PageScraperSiteCaptureFault();
+                              using IDisposable? scope = Logger.ProcessingWorkScope(DateTime.Now);
+                              Logger.PageScraperSiteCaptureFault();
                         }
                   }
             }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -172,7 +200,7 @@ namespace ScraperService
 
             private void AddNewVidLinks(VidLink newVid)
             {
-                  using LinkDBContext db = new();
+                  using LinkDBContext db = new(Logger);
                   if (!db.VidLinks.Any(m => m.VidUrl == newVid.VidUrl))
                   {
                         try
@@ -194,90 +222,11 @@ namespace ScraperService
                   }
 
                   //if (!db.VidAssets.Any(u => u.VidUrl == blogObj.BlogUrl))
-
-
-
-
-
-            }
-
-
-
-
-
-
-
-
-
-
-
-            /*
-                    internal static void ParsePageAsync()
-                    {
-                        try
-                        {
-                            HtmlDocument doc = new();
-                            doc.LoadHtml(TheDriver.PageSource);
-                            // HtmlNode outernode = doc.DocumentNode.SelectSingleNode("//div[contains(@class,'NTCOMMON___postArrangeBody')]");
-                            var nodes = doc.DocumentNode.SelectNodes("//div[@class='blog_marquee')]");
-                            /*
-                                            var nav = outernode.CreateNavigator();
-                                            nav.MoveToFirstChild();
-                                            ScrapeBlogChildNode(((HtmlNodeNavigator)nav).CurrentNode.ChildNodes[1]);
-                                            while (nav.MoveToNext())
-                                            {
-                                                ScrapeBlogChildNode(((HtmlNodeNavigator)nav).CurrentNode.ChildNodes[1]);
-                                            }
-
-                            foreach (HtmlNode node in nodes)
-                            {
-                                ScrapeBlogChildNode(node);
-                            }
-                            blogLists.ForEach(b =>
-                            {
-                                DataController.InsertNewBlog(b);
-                            });
-                        }
-                        catch (System.Exception)
-                        {
-
-                        }
-                    }
-
-
-            */
-
-
-
-
-
-
-
-
-            internal void ScrapeBlogChildNode(HtmlNode node)
-            {
-                  TumBlog blog = new();
-
-                  //#### Get the descendant node of currentyly selected node with an attribute of blog
-                  HtmlNode? bname = node.SelectSingleNode("//div[@class='blog_name']");
-                  string? txt = bname.InnerText;
-
-                  string? burl = $"https://{txt}.newtumbl.com";
-
-                  HtmlNode? iconsrc = node.SelectSingleNode("//div[@class='blog_icon']/img");
-                  string? src = iconsrc.GetAttributeValue("src", "");
-                  Uri? u = new(src);
-                  blog.BlogId = Convert.ToInt32(u.Segments [ 2 ].Remove(u.Segments [ 2 ].Length - 1, 1));
-                  blog.BlogName = txt;
-                  blog.BlogUrl = burl;
-
-                  // blogLists.Add(blog);
-
             }
 
             protected virtual void Dispose(bool disposing)
             {
-                  if (!disposedValue1)
+                  if (!disposedValue)
                   {
                         if (disposing)
                         {
@@ -286,12 +235,16 @@ namespace ScraperService
 
                         // TODO: free unmanaged resources (unmanaged objects) and override finalizer
                         // TODO: set large fields to null
-                        disposedValue1 = true;
+                        disposedValue = true;
                   }
             }
 
             // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-
+            // ~PageScraper()
+            // {
+            //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            //     Dispose(disposing: false);
+            // }
 
             public void Dispose()
             {
@@ -300,49 +253,98 @@ namespace ScraperService
                   GC.SuppressFinalize(this);
             }
       }
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      public class BlogScanStatus
-      {
-            public string StatusMsg { get; set; }
-            public bool IsSuccess { get; set; }
-            public DateTime TimeStamp { get; set; }
-            public TumBlog Blog { get; set; }
-
-            public BlogScanStatus(string msg, bool isSuccess, TumBlog blog)
+/*
+        internal static void ParsePageAsync()
+        {
+            try
             {
-                  this.StatusMsg = msg;
-                  this.IsSuccess = isSuccess;
-                  this.Blog = blog;
-                  this.TimeStamp = DateTime.Now;
+                HtmlDocument doc = new();
+                doc.LoadHtml(TheDriver.PageSource);
+                // HtmlNode outernode = doc.DocumentNode.SelectSingleNode("//div[contains(@class,'NTCOMMON___postArrangeBody')]");
+                var nodes = doc.DocumentNode.SelectNodes("//div[@class='blog_marquee')]");
+                /*
+                                var nav = outernode.CreateNavigator();
+                                nav.MoveToFirstChild();
+                                ScrapeBlogChildNode(((HtmlNodeNavigator)nav).CurrentNode.ChildNodes[1]);
+                                while (nav.MoveToNext())
+                                {
+                                    ScrapeBlogChildNode(((HtmlNodeNavigator)nav).CurrentNode.ChildNodes[1]);
+                                }
+
+                foreach (HtmlNode node in nodes)
+                {
+                    ScrapeBlogChildNode(node);
+                }
+                blogLists.ForEach(b =>
+                {
+                    DataController.InsertNewBlog(b);
+                });
+            }
+            catch (System.Exception)
+            {
 
             }
-      }
+        }
 
 
+
+
+
+
+
+
+
+
+
+internal void ScrapeBlogChildNode(HtmlNode node)
+{
+      TumBlog blog = new();
+
+      //#### Get the descendant node of currentyly selected node with an attribute of blog
+      HtmlNode? bname = node.SelectSingleNode("//div[@class='blog_name']");
+      string? txt = bname.InnerText;
+
+      string? burl = $"https://{txt}.newtumbl.com";
+
+      HtmlNode? iconsrc = node.SelectSingleNode("//div[@class='blog_icon']/img");
+      string? src = iconsrc.GetAttributeValue("src", "");
+      Uri? u = new(src);
+      blog.BlogId = Convert.ToInt32(u.Segments [ 2 ].Remove(u.Segments [ 2 ].Length - 1, 1));
+      blog.BlogName = txt;
+      blog.BlogUrl = burl;
+
+      // blogLists.Add(blog);
 
 }
+
+protected virtual void Dispose(bool disposing)
+{
+      if (!disposedValue1)
+      {
+            if (disposing)
+            {
+                  // TODO: dispose managed state (managed objects)
+            }
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            disposedValue1 = true;
+      }
+}
+
+// // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+
+
+public void Dispose()
+{
+      // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+      Dispose(disposing: true);
+      GC.SuppressFinalize(this);
+}
+
+
+*/

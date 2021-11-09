@@ -27,14 +27,12 @@ namespace ScraperService.Data
       {
 
             private ILogger _logger;
-            private IDataController _dataServices;
 
       
 
-            public DataController(ILogger logger, IDataController dataServices)
+            public DataController(ILogger logger)
             {
                   _logger = logger;
-                  _dataServices = dataServices;
             }
 
             public IEnumerable<string> TestUrlList { get => testUrlList; }

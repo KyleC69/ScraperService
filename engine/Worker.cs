@@ -5,6 +5,7 @@ using System;
 public class Worker : BackgroundService
 {
       private readonly ILogger _logger;
+      private readonly IPageScraper _scraper;
       private static readonly CancellationTokenSource cts = new();
 
       public Timer TaskTimer { get; }
@@ -15,11 +16,9 @@ public class Worker : BackgroundService
       public Worker(ILogger<Worker> logger)
       {
             _logger ??= logger;
+
             this.TaskTimer = new Timer(OnTimerTick, null, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
-
       }
-
-
 
       protected override async Task ExecuteAsync(CancellationToken stoppingToken)
       {
@@ -35,28 +34,23 @@ public class Worker : BackgroundService
 
 
 
-
-
-
       private void OnLaunchScraperAsync(object? sender, EventArgs e)
       {
-            PageScraper ps = new(_logger);
+                  PageScraper ps = new(_logger);
             try
             {
-                  Task tsk = Task.Factory.StartNew(() => ps.BeginSiteScrapeAsync(cts.Token));
+                  ps.BeginSiteScrapeAsync(cts.Token).Wait();
             }
             catch
             {
-_logger.UnknownGeneralError();
-
+                  _logger.UnknownGeneralError();
             }
             finally
             {
-                  ps.Dispose();
+ps.Dispose();
             }
-
-
       }
+
 
       public static void TurnTimerOff()
       {
@@ -77,17 +71,8 @@ _logger.UnknownGeneralError();
 
       private void OnServiceCancelled()
       {
-            _logger.LogWarning("Service Recieved a stop signal - Cancelling running events.");
+            _logger.TaskCanceledException();
             cts.Cancel();
-
-
       }
-
-
-
-
-
-
-
 
 }
