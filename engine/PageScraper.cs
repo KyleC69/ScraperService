@@ -73,7 +73,7 @@ namespace ScraperService
             public async Task BeginSiteScrapeAsync(CancellationToken stoppingToken)
             {
 
-                  List<TumBlog>? list = _dataController.GetBlogList(5, 5);
+                  List<NewTumblBlog>? list = _dataController.GetBlogList(5, 5);
                   
                   if (list.Count == 0)
                   {
@@ -81,7 +81,7 @@ namespace ScraperService
                   }
                   try
                   {
-                        foreach (TumBlog blob in list)
+                        foreach (NewTumblBlog blob in list)
                         {
                               await LoadBlogForScraping(blob, stoppingToken);
                         }
@@ -101,7 +101,7 @@ namespace ScraperService
                   }
             }
 
-            internal async Task LoadBlogForScraping(TumBlog blog, CancellationToken stoppingToken)
+            internal async Task LoadBlogForScraping(NewTumblBlog blog, CancellationToken stoppingToken)
             {
                   HtmlDocument document = new();
                   try

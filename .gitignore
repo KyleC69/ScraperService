@@ -1,4 +1,25 @@
 /.editorconfig
 /.vscode
 /obj
+/bin
 /omnisharp.json
+/packages
+bin/Debug/net6.0/packages/htmlagilitypack/1.11.39/lib/netstandard1.3/HtmlAgilityPack.deps.json
+bin/Debug/net6.0/packages/htmlagilitypack/1.11.39/lib/netstandard1.6/HtmlAgilityPack.deps.json
+bin/Debug/net6.0/packages/htmlagilitypack/1.11.39/lib/netstandard2.0/HtmlAgilityPack.deps.json
+bin/Debug/net6.0/packages/microsoft.netcore.platforms/3.1.0/runtime.json
+Data/-- Create a new table called 'NewTumblBl.sql
+Data/local.session.sql
+engine/NewBlog.cs
+Migrations/20211214220753_dbcreation.cs
+Migrations/20211214220753_dbcreation.Designer.cs
+Migrations/20211214223908_updatedblogtable.cs
+Migrations/20211214223908_updatedblogtable.Designer.cs
+Migrations/20211215102147_dbupdate.cs
+Migrations/20211215102147_dbupdate.Designer.cs
+Migrations/LinkDBContextModelSnapshot.cs
+savedwebsite.html
+subset.xml
+Scraper.code-workspace
+engine/sql.sql
+Data/local.session.sql
