@@ -271,13 +271,13 @@ namespace ScraperService.Data
             using LinkDBContext? db = new(_logger);
             try
             {
-                bloglist = (from x in db.NewTumblBlogs
+             /*   bloglist = (from x in db.NewTumblBlogs
                             where x.LastScanDate <= DateTime.Now.AddDays(daysFromLastScan - (daysFromLastScan * 2))
                                           && (x.BlogEnabled == true || x.LastScanDate == null)
                             select x).Take(Qty).ToList();
 
-
-                //    blog = (from x in db.NewTumblBlogs where x.IsEnabled == true && (x.LastScanDate == null) select x).Take(Qty).ToList();
+*/
+                   bloglist = (from x in db.NewTumblBlogs where x.BlogEnabled == true && (x.LastScanDate == null) select x).Take(Qty).ToList();
 
 
             }

@@ -25,10 +25,10 @@ where vl.isdownloaded =0
 
 */
 
-use LinkDB
+use ScraperBlogs
 select *
-from TumBlogs
-where IsEnabled=1
+from NewTumblBlogs
+where BlogEnabled=1
 
 
 

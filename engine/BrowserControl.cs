@@ -40,7 +40,7 @@ namespace ScraperService
                   try
                   {
                       EdgeOptions options = new();
-                      // options.AddArgument("--headless");
+                       options.AddArgument("--headless");
                       // options.AddArgument("--user-data-dir=/home/savaho/.config/microsoft-edge-dev/profiles");
                       _driver = new("./engine/", options, TimeSpan.FromMinutes(2));
                       tcs.SetResult(_driver);

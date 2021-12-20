@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.tabs.enabled": false,
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.colorDecorators": true
+}

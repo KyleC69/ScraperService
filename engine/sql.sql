@@ -1,4 +1,6 @@
-use linkDB
+use ScraperBlogs
 GO
-select * from Tumblogs
+select * from NewTumblBlogs
+
+where BlogEnabled=1
 GO
