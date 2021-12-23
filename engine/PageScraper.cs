@@ -71,8 +71,7 @@ namespace ScraperService
         }
         public async Task BeginSiteScrapeAsync(CancellationToken stoppingToken)
         {
-            using DataController dc = new(Logger);
-            List<NewTumblBlog>? list = dc.GetBlogList(5, 50);
+            List<NewTumblBlog>? list = DataController.GetBlogList(3, 150);
 
             if (list.Count == 0)
             {

@@ -15,7 +15,7 @@ namespace ScraperService.Data
     {
 
         List<NewTumblBlog> GetBlogList(int daysFromLastScan);
-        List<NewTumblBlog> GetBlogList(int daysFromLastScan, int Qty);
+        // List<NewTumblBlog> GetBlogList(int daysFromLastScan, int Qty);
         void UpdateImageLink(ImgLink img);
         void UpdateScanStatus(BlogScanStatus status);
         void UpdateScanStatus(NewTumblBlog itm);
@@ -75,7 +75,7 @@ namespace ScraperService.Data
 
             using LinkDBContext db = new();
             {
-                if(db.NewTumblBlogs.Any(m => m.BlogId == bl.BlogId)){return Task.CompletedTask;}
+                if (db.NewTumblBlogs.Any(m => m.BlogId == bl.BlogId)) { return Task.CompletedTask; }
                 try
                 {
                     db.NewTumblBlogs.Add(bl);
@@ -265,30 +265,26 @@ namespace ScraperService.Data
         /// <param name="daysFromLastScan">Number of days from last successful scan</param>
         /// <param name="Qty">Number of Blogs to return</param>
         /// <returns>List<Blog></returns>
-        public List<NewTumblBlog> GetBlogList(int daysFromLastScan, int Qty)
+        public static List<NewTumblBlog> GetBlogList(int daysFromLastScan, int Qty)
         {
             List<NewTumblBlog> bloglist = new();
-            using LinkDBContext? db = new(_logger);
+            using LinkDBContext db = new();
             try
             {
-             /*   bloglist = (from x in db.NewTumblBlogs
+                bloglist = (from x in db.NewTumblBlogs
                             where x.LastScanDate <= DateTime.Now.AddDays(daysFromLastScan - (daysFromLastScan * 2))
                                           && (x.BlogEnabled == true || x.LastScanDate == null)
                             select x).Take(Qty).ToList();
-
-*/
-                   bloglist = (from x in db.NewTumblBlogs where x.BlogEnabled == true && (x.LastScanDate == null) select x).Take(Qty).ToList();
 
 
             }
             catch
             {
-                _logger.DatabaseQueryFault();
+                // Logger.DatabaseQueryFault();
 
             }
             return bloglist;
         }
-
 
 
 
